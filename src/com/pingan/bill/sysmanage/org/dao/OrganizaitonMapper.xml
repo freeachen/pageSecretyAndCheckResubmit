@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.pingan.bill.sysmanage.org.dao.OrganizationMapper" >
+  <resultMap id="organizationResultMap" type="com.pingan.bill.sysmanage.org.entity.Organization" >
+    <id column="org_id" property="org_id" jdbcType="VARCHAR" />
+    <result column="org_name" property="org_name" jdbcType="VARCHAR" />
+    <result column="org_type" property="org_type" jdbcType="VARCHAR" />
+    <result column="org_supperId" property="org_supperId" jdbcType="VARCHAR" />
+    <result column="org_area" property="org_area" jdbcType="VARCHAR" />
+    <result column="org_contact" property="org_contact" jdbcType="VARCHAR" />
+    <result column="org_phone" property="org_phone"/>
+    <result column="org_post" property="org_post"/>
+    <result column="org_address" property="org_address"/>
+  </resultMap>
+  
+
+  <insert id="insert" parameterType="organization"> <!-- 别名大小写无所谓, organization也可以 -->
+		insert into organization
+			(org_id,org_name,org_type,org_supperId,org_area,org_contact,org_phone,org_post,org_address)
+		values
+			(#{org_id},#{org_name}, #{org_type}, #{org_supperId}, #{org_area}, #{org_contact}, #{org_phone}, #{org_post}, #{org_address});
+	</insert>
+	
+	<!-- 根据主键修改供应商信息 -->
+	<update id="update" parameterType="Organization" >
+		update Organization set
+			org_name=#{org_name},org_contact=#{org_contact},org_phone=#{org_phone},
+			org_address=#{org_address},org_type=#{org_type},org_area=#{org_area},org_post=#{org_post}
+		where
+			org_id=#{org_id}	
+	</update>
+  
+  <!-- 通过关键字分页查询, 返回数据集   resultMap 类型集合中的类型-->
+  <select id="selectPageList" parameterType="page" resultMap="organizationResultMap" >
+    	select * from organization where sup_name like #{keyWord} limit #{start},#{rows}
+  </select>
+  
+  <!-- 通过关键字分页查询，返回总记录数 -->
+  <select id="selectPageCount" parameterType="page" resultType="Integer">
+  	select count(1) from Organization where sup_name like #{keyWord} 
+  </select>
+  
+  <!-- 通过多条件分页查询，返回数据集 -->
+  <select id="selectPageListUseDyc" parameterType="page" resultMap="organizationResultMap" >
+    select * from Organization 
+    <where>
+    	<if test="paramEntity.org_name!=null">and org_name like #{paramEntity.org_name}</if>
+    	<if test="paramEntity.org_area!=null">and org_area like #{paramEntity.org_area}</if>    
+    </where>
+	 limit #{start},#{rows}
+  </select>
+  
+  <!-- 通过多条件分页查询，返回总记录数 -->
+  <select id="selectPageCountUseDyc" parameterType="page" resultType="Integer">
+  	select count(1) from Organization 
+  	<where>
+    	<if test="paramEntity.org_name!=null">and org_name like #{paramEntity.org_name}</if>
+    	<if test="paramEntity.org_area!=null">and org_area like #{paramEntity.org_area}</if>    
+    </where>
+  </select>
+  
+  <!-- 通过主键批量删除供应商 -->
+  <delete id="deleteList">
+  	delete from Organization where org_id in
+	<foreach collection="array" open="(" close=")" separator="," item="pk">
+		#{pk}
+	</foreach>
+  </delete>
+ 
+</mapper>

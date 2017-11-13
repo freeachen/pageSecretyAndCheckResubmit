@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.2.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd">
+
+	<!-- 1.mysql配置数据源，记得去掉myBatis-config.xml的数据源相关配置 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="com.mysql.jdbc.Driver" />
+		<property name="jdbcUrl" value="jdbc:mysql://localhost:3306/scm?useUnicode=true&amp;characterEncoding=UTF-8" />
+		<property name="user" value="root" />
+		<property name="password" value="root" />
+	</bean>
+	
+	<!--  1.2 oracle配置,最后两项配置防止tomcat时常断开
+ 方式2: UAT库 <property name="jdbcUrl"><value>jdbc:oracle:thin:@10.14.201.135:1521:billapp</value></property> 
+ 	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass"><value>oracle.jdbc.driver.OracleDriver</value></property>
+		<property name="user"><value>billapp</value></property>
+		<property name="password"><value>Paic1234</value></property>
+		<property name="minPoolSize"><value>20</value></property>
+		<property name="maxPoolSize" ><value>40</value></property>
+		<property name="maxStatements" ><value>100</value></property>
+		<property name="acquireIncrement" ><value>3</value></property>
+		<property name="maxIdleTime" ><value>5000</value></property>
+		<property name="preferredTestQuery"><value>select 1 from dual</value></property>
+		<property name="idleConnectionTestPeriod" ><value>300</value></property>
+	</bean> 
+	
+ 	<bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="configlocation">
+			<value>classpath:sqlmap_config.xml</value>所有分映射文件的集合
+		</property>
+		<property name="dataSource" ref="dataSource"></property>
+	</bean> -->
+
+	<!-- 2.配置sqlSession工厂,加载mybatis配置文件和映射文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:myBatis-config.xml" />
+		<!--配置扫描式加载SQL映射文件,记得去掉mybatis-config配置-->
+		<property name="mapperLocations" value="classpath:com/pingan/bill/sysmanage/org/dao/*.xml"/>
+	</bean>
+
+	<!-- 3.配置mybatis事务管理器,管理数据源事务处理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 配置事务通知 -->
+	<tx:advice id="advice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 默认只处理运行时异常，可加rollback-for="Exception/Throwable"等处理所有异常或包括错误 -->
+			<tx:method name="insert*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="add*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="update*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="delete*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="save*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="*" propagation="SUPPORTS" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- 配置切面织入的范围,后边要把事务边界定在service层 -->
+	<aop:config>
+		<aop:advisor advice-ref="advice" pointcut="execution(* com.pingan.bill.sysmanage.org.service.impl.*.*(..))" />
+	</aop:config>
+	
+	<!--4. 配置SessionTemplate，已封装了繁琐的数据操作 -->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- <context:component-scan base-package="*" /> -->
+	<!--5. 自动扫描组件，要把controller去除，他们是在spring-mvc.xml中配置，如果不去除会影响事务管理。 -->
+	<context:component-scan base-package="com.pingan.bill">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!--6. 配置 转换器，对于在basePackage设置的包（包括子包）下的接口类，
+	如果接口类的全类名在Mapper.xml文件中和定义过命名空间一致，
+	 将被转换成spring的BEAN，在调用的地方通过@Autowired方式将可以注入接口实例 -->
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+		<property name="basePackage" value="com.pingan.bill.sysmanage.org.dao" />
+	</bean>
+
+</beans>

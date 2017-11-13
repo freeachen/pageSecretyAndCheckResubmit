@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!-- 通过别名简化对类的使用 -->
+	<typeAliases>
+		<!--<typeAlias type="com.pingan.bill.sysmanage.org.entity.Organization" alias="Organization" /> 
+			<mappers>
+				<mapper resource="sqlmap/SupplierMapper.xml" />
+			</mappers>
+		-->
+		 <!-- 
+		通过package, 可以直接指定package的名字， mybatis会自动扫描你指定包下面的javabean,
+		并且默认设置一个别名，默认的名字为非限定类名来作为它的别名,别名默认为类名（首字母小写或大写）    
+		-->
+		 <package name="com.pingan.bill.sysmanage.org.entity"/>
+	</typeAliases>
+</configuration>
